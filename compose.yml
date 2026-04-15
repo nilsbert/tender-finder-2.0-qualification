@@ -1,0 +1,43 @@
+# ============================================================
+# Qualification Microservice — Standalone Docker Compose
+# ============================================================
+# Usage:  docker compose up --build
+# ============================================================
+
+services:
+  qualification:
+    build: .
+    ports:
+      - "8013:8013"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=mssql+aioodbc://sa:StrongPassword123!@sqlserver:1433/qualification?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=no
+      - PORT=8013
+    networks:
+      - qualification-net
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=StrongPassword123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1436:1433"
+    volumes:
+      - qualification-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'StrongPassword123!' -Q 'SELECT 1' -C"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - qualification-net
+
+volumes:
+  qualification-data:
+
+networks:
+  qualification-net:
