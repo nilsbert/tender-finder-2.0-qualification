@@ -7,9 +7,9 @@ from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-from .core.database import db
-from .api.routes import router as qualification_router
-from .rating.routes import router as keywords_router
+from core.database import db
+from api.routes import router as qualification_router
+from rating.routes import router as keywords_router
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)

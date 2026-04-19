@@ -1,8 +1,8 @@
 from typing import List, Optional
 import logging
 import json
-from .models import KeywordCreate, TenderACL
-from .core.database import db
+from models import KeywordCreate, TenderACL
+from core.database import db
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class KeywordAnalysisService:
         """
         # 1. Fetch Tender Data from local DB
         # Note: In the decoupled world, we fetch the TenderACL record.
-        from .core.database import db
+        from core.database import db
         tender_orm = await db.get_tender_acl(tender_id)
         if not tender_orm:
              # Fallback: if not in local DB, maybe it was just synced or we need to fail gracefully

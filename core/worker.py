@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy.future import select
-from .core.database import db
-from .core.models import Keyword, QualificationScore
+from core.database import db
+from core.models import Keyword, QualificationScore
 import httpx
 import os
 

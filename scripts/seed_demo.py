@@ -4,11 +4,11 @@ import sys
 from datetime import datetime
 from sqlalchemy import text, select
 
-# Add the parent directory to sys.path to allow imports from .core, rating, etc.
+# Add the parent directory to sys.path to allow imports from core, rating, etc.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from .core.database import db
-from .core.models import QualificationScore, TenderACL
+from core.database import db
+from core.models import QualificationScore, TenderACL
 
 async def seed():
     print("Seeding demo data into Qualification Microservice...")

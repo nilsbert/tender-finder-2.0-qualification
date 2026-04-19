@@ -3,8 +3,8 @@ import json
 from datetime import datetime
 from typing import List, Dict, Any
 
-from .core.database import db
-from .core.models import QualificationScore
+from core.database import db
+from core.models import QualificationScore
 import httpx
 import os
 

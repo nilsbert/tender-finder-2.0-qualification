@@ -5,9 +5,9 @@ Now strictly independent (Option B).
 """
 import logging
 from typing import List, Dict, Optional
-from .models import Keyword as LocalKeyword, TenderACL
-from .core.database import db
-from .core.scoring import ScoringPolicy, Keyword as DomainKeyword, MatchLocation
+from models import Keyword as LocalKeyword, TenderACL
+from core.database import db
+from core.scoring import ScoringPolicy, Keyword as DomainKeyword, MatchLocation
 
 logger = logging.getLogger(__name__)
 

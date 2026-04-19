@@ -6,7 +6,7 @@ from sqlalchemy import text
 # Add parent directory to path to import qualification.core
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from .core.database import db
+from core.database import db
 
 async def check_keywords():
     try:

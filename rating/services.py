@@ -5,9 +5,9 @@ Now strictly independent (Option B).
 import logging
 import asyncio
 from typing import List, Tuple, Dict
-from .models import Keyword, TenderACL
-from .core.database import db
-from .application_service import RatingApplicationService
+from rating.models import Keyword, TenderACL
+from core.database import db
+from rating.application_service import RatingApplicationService
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class RatingService:
             
             async with db.get_session() as session:
                 from sqlalchemy import select
-                from .core.models import TenderACL as ORMTender
+                from core.models import TenderACL as ORMTender
                 result = await session.execute(select(ORMTender))
                 tenders = result.scalars().all()
                 
