@@ -10,6 +10,13 @@
 
 The Qualification Microservice determines if a sourced tender is **worth pursuing** based on its content and predefined sector-specific rules. It bridges the gap between raw scoring (Rating MS) and actionable distribution (Dispatching MS), applying rule-based qualification logic and AI-assisted analysis.
 
+## 📚 Documentation
+- **[Product Vision](./docs/PRODUCT_VISION.md)** - The "Mini Product Version" (Vision, Strategy, Goals)
+- **[Stakeholder Personas](./docs/PERSONAS.md)** - Mapping project personas to decision-making requirements
+- **[Architecture Definition](./docs/ARCHITECTURE.md)** - Technical design, state machine & decision logic
+- **[API Documentation](./API.md)** - Endpoint definitions for decisions
+- **[Domain Logic](./DOMAIN.md)** - Detailed qualification rules and risk matrices
+
 ## 2. 🤖 Agent Context (CRITICAL)
 
 - **Role**: Qualification Gate & Rule Engine.
