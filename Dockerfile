@@ -21,6 +21,10 @@ COPY . .
 # Ensure the module is discoverable
 ENV PYTHONPATH="/app"
 
+# Run as non-root user
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
 # Qualification MS port
 EXPOSE 8013
 

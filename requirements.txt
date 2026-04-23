@@ -27,3 +27,5 @@ rq
 pytest-mock
 aiosqlite
 aiosqlite
+aioodbc==0.3.3
+pyodbc==5.1.0
