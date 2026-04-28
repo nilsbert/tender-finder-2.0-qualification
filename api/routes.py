@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from rating.models import Keyword, KeywordCreate
 from core.database import db
 from core.feedback_service import FeedbackService
+from core.worker import rerate_not_enriched_worker
 
 router = APIRouter(prefix="/qualification", tags=["qualification"])
 feedback_service = FeedbackService()

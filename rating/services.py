@@ -5,9 +5,9 @@ Now strictly independent (Option B).
 import logging
 import asyncio
 from typing import List, Tuple, Dict
-from rating.models import Keyword, TenderACL
+from .models import Keyword, TenderACL
 from core.database import db
-from rating.application_service import RatingApplicationService
+from .application_service import RatingApplicationService
 
 logger = logging.getLogger(__name__)
 

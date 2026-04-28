@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 import logging
 from typing import List
-from rating.models import Keyword, KeywordCreate
+from .models import Keyword, KeywordCreate
 from core.database import db, DuplicateKeywordError
 from sqlalchemy import text
 
