@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import Optional, List
-from datetime import datetime
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from typing import Optional
+from datetime import datetime, timezone
 import uuid
 
 class KeywordBase(BaseModel):
@@ -25,10 +25,9 @@ class KeywordBase(BaseModel):
     @model_validator(mode='after')
     def validate_weight_rule(self):
         # Access attributes directly since mode='after' provides the model instance
-        t = self.term
         w = self.weight
         kw_type = self.type
-        
+
         if kw_type == 'Exclusion':
             if w >= 0:
                 raise ValueError('Exclusion keywords must have a negative weight')
@@ -42,9 +41,9 @@ class KeywordCreate(KeywordBase):
 
 class Keyword(KeywordBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "id": "123-456",
@@ -54,16 +53,17 @@ class Keyword(KeywordBase):
                 "created_at": "2023-10-27T10:00:00"
             }
         }
+    )
 
 class KeywordYamlModel(BaseModel):
-    keywords: List[KeywordCreate]
+    keywords: list[KeywordCreate]
 
 class KeywordImportSummary(BaseModel):
-    created: List[KeywordCreate] = []
-    updated: List[KeywordCreate] = []
-    deleted: List[Keyword] = []
+    created: list[KeywordCreate] = []
+    updated: list[KeywordCreate] = []
+    deleted: list[Keyword] = []
     total_count: int = 0
-    errors: List[str] = []
+    errors: list[str] = []
 
 class KeywordImportResult(BaseModel):
     summary: KeywordImportSummary
@@ -82,17 +82,18 @@ class TenderACL(BaseModel):
     full_text: Optional[str] = None
     published_at: Optional[datetime] = Field(None, alias="published")
     deadline_at: Optional[datetime] = Field(None, alias="due")
-    
+
     # Rating results (populated by service)
     score: float = 0.0
     rating_total: float = 0.0
     rating_title: float = 0.0
-    matched_keywords: List[dict] = []
-    
+    matched_keywords: list[dict] = []
+
     # Metadata
     enrichment_locked: bool = False
     source_system: str = "Unknown"
-    
-    class Config:
-        populate_by_name = True
-        alias_generator = None 
+
+    model_config = ConfigDict(
+        populate_by_name = True,
+        alias_generator = None
+    )
