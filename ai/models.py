@@ -2,9 +2,11 @@ from enum import Enum
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
+
 class AIProvider(str, Enum):
     OPENAI = "openai"
     GEMINI = "gemini"
+
 
 class AIProviderSettings(BaseModel):
     provider: AIProvider
@@ -14,6 +16,7 @@ class AIProviderSettings(BaseModel):
 
     def dict(self, *args, **kwargs):
         return self.model_dump(*args, **kwargs)
+
 
 class AIConnectorConfig(BaseModel):
     provider: AIProvider
@@ -26,6 +29,7 @@ class AIConnectorConfig(BaseModel):
 
     def dict(self, *args, **kwargs):
         return self.model_dump(*args, **kwargs)
+
 
 class TestConnectionResponse(BaseModel):
     success: bool

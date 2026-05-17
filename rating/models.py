@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime, timezone
 import uuid
 
+
 class KeywordBase(BaseModel):
     term: str = Field(..., description="The keyword term to search for", min_length=2)
     weight: float = Field(..., description="Positive or negative weight for scoring")
@@ -11,7 +12,7 @@ class KeywordBase(BaseModel):
     sub_category: Optional[str] = Field(None, description="Nested category for finer granularity (Sub Category)")
     category: Optional[str] = Field(None, description="Optional category for organization (kept for compatibility)")
 
-    @field_validator('term')
+    @field_validator("term")
     @classmethod
     def validate_term(cls, v: str) -> str:
         clean_v = v.strip()
@@ -22,41 +23,45 @@ class KeywordBase(BaseModel):
         # Spaces are allowed in keywords for better matching (e.g. "Cloud Computing")
         return clean_v
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_weight_rule(self):
         # Access attributes directly since mode='after' provides the model instance
         w = self.weight
         kw_type = self.type
 
-        if kw_type == 'Exclusion':
+        if kw_type == "Exclusion":
             if w >= 0:
-                raise ValueError('Exclusion keywords must have a negative weight')
-        elif kw_type in ['Service', 'Sector']:
+                raise ValueError("Exclusion keywords must have a negative weight")
+        elif kw_type in ["Service", "Sector"]:
             if w <= 0:
-                raise ValueError(f'{kw_type} keywords must have a positive weight')
+                raise ValueError(f"{kw_type} keywords must have a positive weight")
         return self
+
 
 class KeywordCreate(KeywordBase):
     pass
+
 
 class Keyword(KeywordBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "123-456",
                 "term": "Machine Learning",
                 "weight": 1.5,
                 "category": "Technology",
-                "created_at": "2023-10-27T10:00:00"
+                "created_at": "2023-10-27T10:00:00",
             }
         }
     )
 
+
 class KeywordYamlModel(BaseModel):
     keywords: list[KeywordCreate]
+
 
 class KeywordImportSummary(BaseModel):
     created: list[KeywordCreate] = []
@@ -65,17 +70,20 @@ class KeywordImportSummary(BaseModel):
     total_count: int = 0
     errors: list[str] = []
 
+
 class KeywordImportResult(BaseModel):
     summary: KeywordImportSummary
     dry_run: bool
     success: bool
     message: str
 
+
 class TenderACL(BaseModel):
     """
     Minimal Pydantic model for Tender data used in Rating logic.
     Part of the Anti-Corruption Layer (ACL).
     """
+
     id: str = Field(..., alias="internal_id")
     title: str = Field(..., alias="headline")
     description: str
@@ -93,7 +101,4 @@ class TenderACL(BaseModel):
     enrichment_locked: bool = False
     source_system: str = "Unknown"
 
-    model_config = ConfigDict(
-        populate_by_name = True,
-        alias_generator = None
-    )
+    model_config = ConfigDict(populate_by_name=True, alias_generator=None)

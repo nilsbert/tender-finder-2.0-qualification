@@ -6,6 +6,7 @@ from core.worker import rerate_not_enriched_worker
 router = APIRouter(prefix="/qualification", tags=["qualification"])
 feedback_service = FeedbackService()
 
+
 @router.post("/rerate-not-enriched")
 async def rerate_not_enriched(background_tasks: BackgroundTasks):
     """
@@ -13,6 +14,7 @@ async def rerate_not_enriched(background_tasks: BackgroundTasks):
     """
     background_tasks.add_task(rerate_not_enriched_worker)
     return {"message": "Rerate process started in background"}
+
 
 @router.post("/feedback/{tender_id}")
 async def give_feedback(tender_id: str, direction: str):

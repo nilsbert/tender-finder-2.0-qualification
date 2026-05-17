@@ -34,16 +34,8 @@ async def test_rerate_skips_locked(monkeypatch):
 
     def fake_iterator():
         return [
-            {
-                "internal_id": "t1",
-                "headline": "cloud tender",
-                "enrichment_locked": True
-            },
-            {
-                "internal_id": "t2",
-                "headline": "cloud tender",
-                "enrichment_locked": False
-            }
+            {"internal_id": "t1", "headline": "cloud tender", "enrichment_locked": True},
+            {"internal_id": "t2", "headline": "cloud tender", "enrichment_locked": False},
         ]
 
     monkeypatch.setattr(db, "get_all_keywords", fake_get_all_keywords)

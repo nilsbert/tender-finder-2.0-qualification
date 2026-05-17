@@ -7,6 +7,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
+
 async def rerate_not_enriched_worker():
     logger.info("Starting optimized rerate_not_enriched_worker")
     count = 0
@@ -16,7 +17,7 @@ async def rerate_not_enriched_worker():
             stmt = select(Keyword)
             result = await session.execute(stmt)
             keywords = result.scalars().all()
-            
+
             if not keywords:
                 logger.warning("No keywords defined. Skipping rerate.")
                 return
@@ -27,7 +28,7 @@ async def rerate_not_enriched_worker():
             # Need an endpoint on backend to fetch unrated tenders
             # Assuming /api/tenders/unrated exists or will be created
             try:
-                resp = await client.get(f"{backend_url}/api/debug/tenders") # Using debug as placeholder
+                resp = await client.get(f"{backend_url}/api/debug/tenders")  # Using debug as placeholder
                 tenders = resp.json() if resp.status_code == 200 else []
             except Exception as e:
                 logger.error(f"Failed to fetch tenders from backend: {e}")
@@ -40,10 +41,10 @@ async def rerate_not_enriched_worker():
                 title = tender.get("title") or ""
                 description = tender.get("description") or ""
                 search_text = (title + " " + description).lower()
-                
+
                 matched = []
                 total_score = 0.0
-                
+
                 for kw in keywords:
                     if kw.term.lower() in search_text:
                         matched.append({"term": kw.term, "score": kw.weight})
@@ -58,7 +59,7 @@ async def rerate_not_enriched_worker():
                         session.add(score_entry)
                     score_entry.score = total_score
                     score_entry.matched_keywords = matched
-                
+
                 # 5. Push score back to backend
                 try:
                     # Assuming an endpoint to update tender score
@@ -67,8 +68,8 @@ async def rerate_not_enriched_worker():
                     logger.warning(f"Failed to push score back to backend for {t_id}: {e}")
 
                 count += 1
-                
+
         logger.info(f"Finished rerating. Updated {count} tenders.")
-        
+
     except Exception as e:
         logger.error(f"Error in rerate_not_enriched_worker: {e}", exc_info=True)

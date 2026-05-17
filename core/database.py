@@ -3,12 +3,16 @@ import urllib.parse
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import text
+
+
 class DuplicateKeywordError(Exception):
     pass
+
 
 from .models import QualificationBase
 
 logger = logging.getLogger(__name__)
+
 
 class DatabaseManager:
     def __init__(self, schema_name):
@@ -26,14 +30,19 @@ class DatabaseManager:
         if "sqlite" in self.url:
             for table in QualificationBase.metadata.tables.values():
                 table.schema = None
-        
+
         async with self.engine.begin() as conn:
             if "mssql" in self.url:
-                await conn.execute(text(f"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{self.schema}') EXEC('CREATE SCHEMA {self.schema}')"))
+                await conn.execute(
+                    text(
+                        f"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{self.schema}') EXEC('CREATE SCHEMA {self.schema}')"
+                    )
+                )
             await conn.run_sync(QualificationBase.metadata.create_all)
         logger.info(f"{self.schema} database initialized successfully.")
 
     def get_session(self):
         return self.session_factory()
+
 
 db = DatabaseManager("qualification")

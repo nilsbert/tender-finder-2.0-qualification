@@ -10,21 +10,23 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from core.database import db
 from core.models import QualificationScore, TenderACL
 
+
 async def seed():
     print("Seeding demo data into Qualification Microservice...")
     await db.init_db()
-    
+
     # 1. Seed Keywords
     from rating.initial_data import get_initial_keywords
+
     keywords = get_initial_keywords()
-    for kw in keywords[:20]: # Just first 20 for demo
+    for kw in keywords[:20]:  # Just first 20 for demo
         try:
             await db.create_keyword(kw)
             print(f"Added keyword: {kw.term}")
         except Exception:
-             # Skip duplicates
-             pass
-            
+            # Skip duplicates
+            pass
+
     # 2. Seed Tenders ACL
     demo_tenders = [
         {
@@ -34,7 +36,7 @@ async def seed():
             "full_text": "Detailed requirements for cloud migration...",
             "score": 85.5,
             "status": "rated",
-            "source_system": "TED Europe"
+            "source_system": "TED Europe",
         },
         {
             "id": "tender_002",
@@ -43,7 +45,7 @@ async def seed():
             "full_text": "Supply chain optimization using Python and TensorFlow...",
             "score": 92.0,
             "status": "rated",
-            "source_system": "Bund.de"
+            "source_system": "Bund.de",
         },
         {
             "id": "tender_003",
@@ -52,14 +54,14 @@ async def seed():
             "full_text": "Audit requirements for ISO 27001...",
             "score": 45.0,
             "status": "rated",
-            "source_system": "SIMAP"
-        }
+            "source_system": "SIMAP",
+        },
     ]
-    
+
     for t in demo_tenders:
         await db.upsert_tender_acl(t)
         print(f"Upserted Tender ACL: {t['id']}")
-        
+
         # Also seed scores table
         async with db.get_session() as session:
             stmt = select(QualificationScore).where(QualificationScore.tender_id == t["id"])
@@ -73,6 +75,7 @@ async def seed():
             print(f"Updated Score for: {t['id']}")
 
     print("Seeding complete.")
+
 
 if __name__ == "__main__":
     asyncio.run(seed())
