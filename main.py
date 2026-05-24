@@ -1,6 +1,6 @@
 import os
-import logging
-from fastapi import FastAPI, HTTPException
+from core.logger import setup_logger
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -12,8 +12,7 @@ from api.routes import router as qualification_router
 from rating.routes import router as keywords_router
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = setup_logger("main", "qualification")
 
 
 @asynccontextmanager
@@ -32,7 +31,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:8009").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,15 +39,24 @@ app.add_middleware(
 
 
 @app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "qualification"}
+async def health_check(response: Response):
+    """Deep health check verifying database connectivity."""
+    from sqlalchemy import text
+
+    db_status = "healthy"
+    try:
+        async with db.engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception as e:
+        logger.error(f"❌ Health check DB failure: {e}")
+        db_status = "unhealthy"
+        response.status_code = 503
+
+    return {"status": "ok" if db_status == "healthy" else "degraded", "database": db_status, "service": "qualification"}
 
 
 app.include_router(qualification_router, prefix="/api", tags=["qualification"])
 app.include_router(keywords_router, prefix="/api", tags=["Keywords"])
-
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
 
 # Serve isolated frontend static files for the qualification service
 ui_dist_path = os.path.join(os.path.dirname(__file__), "ui", "dist")
@@ -63,7 +71,7 @@ if os.path.exists(ui_dist_path):
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
         if full_path.startswith("api") or full_path == "health":
-            return None
+            raise HTTPException(status_code=404, detail=f"API route not found: {full_path}")
 
         file_path = os.path.join(ui_dist_path, full_path)
         if os.path.isfile(file_path):
