@@ -1,0 +1,117 @@
+databaseChangeLog:
+- changeSet:
+    id: 1780851737979-1
+    author: liquibase (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+            name: key
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: value
+            type: JSON(2000000000, 10)
+        - column:
+            name: updated_at
+            type: TEXT
+        tableName: configs
+- changeSet:
+    id: 1780851737979-2
+    author: liquibase (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+            name: id
+            type: VARCHAR(50)
+        - column:
+            constraints:
+              nullable: false
+            name: term
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: weight
+            type: FLOAT(2000000000, 10)
+        - column:
+            constraints:
+              nullable: false
+            name: type
+            type: VARCHAR(50)
+        - column:
+            name: sub_type
+            type: VARCHAR(255)
+        - column:
+            name: sub_category
+            type: VARCHAR(255)
+        - column:
+            name: category
+            type: VARCHAR(255)
+        - column:
+            name: created_at
+            type: VARCHAR(50)
+        tableName: keywords
+- changeSet:
+    id: 1780851737979-3
+    author: liquibase (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+            name: tender_id
+            type: VARCHAR(50)
+        - column:
+            constraints:
+              nullable: false
+            name: score
+            type: FLOAT(2000000000, 10)
+        - column:
+            name: matched_keywords
+            type: JSON(2000000000, 10)
+        tableName: scores
+- changeSet:
+    id: 1780851737979-4
+    author: liquibase (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+            name: id
+            type: VARCHAR(50)
+        - column:
+            name: title
+            type: VARCHAR(500)
+        - column:
+            name: description
+            type: VARCHAR(2000000000)
+        - column:
+            name: full_text
+            type: VARCHAR(2000000000)
+        - column:
+            constraints:
+              nullable: false
+            name: score
+            type: FLOAT(2000000000, 10)
+        - column:
+            name: status
+            type: VARCHAR(50)
+        - column:
+            name: source_system
+            type: VARCHAR(100)
+        tableName: tenders_acl
+

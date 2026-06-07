@@ -1,5 +1,5 @@
 from typing import List
-from models import KeywordCreate
+from .models import KeywordCreate
 
 
 def get_initial_keywords() -> List[KeywordCreate]:

@@ -4,7 +4,7 @@ import json
 import asyncio
 from typing import Optional, Tuple
 from core.database import db
-from models import AIProvider, AIConnectorConfig, AIProviderSettings, TestConnectionResponse
+from .models import AIProvider, AIConnectorConfig, AIProviderSettings, TestConnectionResponse
 
 logger = logging.getLogger(__name__)
 

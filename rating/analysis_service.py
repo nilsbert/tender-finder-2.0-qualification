@@ -1,7 +1,7 @@
 from typing import List, Optional
 import logging
 import json
-from models import KeywordCreate, TenderACL
+from .models import KeywordCreate, TenderACL
 from core.database import db
 
 logger = logging.getLogger(__name__)

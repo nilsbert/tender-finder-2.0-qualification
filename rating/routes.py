@@ -187,7 +187,7 @@ async def rate_tender_manually(tender_id: str, _=Depends(get_admin_user)):
             raise HTTPException(status_code=404, detail="Tender not found in Qualification ACL")
 
         # 2. Convert to TenderACL Pydantic
-        from models import TenderACL
+        from .models import TenderACL
 
         tender = TenderACL(
             internal_id=tender_orm.id,
@@ -231,7 +231,7 @@ async def rate_tender_stateless(request: StatelessRateRequest):
     """
     try:
         # Avoid circular import by moving inside if needed, or use existing models
-        from models import TenderACL
+        from .models import TenderACL
 
         tender = TenderACL(
             internal_id=request.id or "stateless",
@@ -264,7 +264,7 @@ from fastapi import UploadFile, File, Form, Query
 from fastapi.responses import Response
 import json
 import yaml
-from models import KeywordYamlModel, KeywordImportResult, KeywordImportSummary
+from .models import KeywordYamlModel, KeywordImportResult, KeywordImportSummary
 
 
 @router.get("/export", response_class=Response)
