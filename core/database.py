@@ -2,7 +2,8 @@ import os
 import urllib.parse
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import text
+from sqlalchemy import text, func
+from datetime import datetime
 
 
 class DuplicateKeywordError(Exception):
@@ -19,7 +20,9 @@ class DatabaseManager:
         self.schema = schema_name
         conn_str = os.getenv("DATABASE_URL")
         if not conn_str or "sqlite" in conn_str:
-            self.url = f"sqlite+aiosqlite:///{schema_name}.db"
+            # Store in /data so a named Docker volume can persist across rebuilds
+            os.makedirs("/data", exist_ok=True)
+            self.url = f"sqlite+aiosqlite:////data/{schema_name}.db"
         else:
             self.url = conn_str
         self.engine = create_async_engine(self.url, pool_pre_ping=True)
@@ -65,82 +68,152 @@ class DatabaseManager:
         return self.session_factory()
 
     async def get_all_keywords(self):
-        from .models import Keyword
-        from sqlalchemy import select
-        async with self.session_factory() as session:
-            result = await session.execute(select(Keyword))
+
+        async with self.get_session() as session:
+            from core.models import Keyword as ORMKeyword
+            from sqlalchemy import select
+            result = await session.execute(select(ORMKeyword))
             return result.scalars().all()
 
     async def get_categories(self):
-        from sqlalchemy import text
-        async with self.session_factory() as session:
-            result = await session.execute(text("SELECT DISTINCT category FROM keywords WHERE category IS NOT NULL"))
-            return [row[0] for row in result.all()]
+        async with self.get_session() as session:
+            from core.models import Keyword as ORMKeyword
+            from sqlalchemy import select
+            result = await session.execute(select(ORMKeyword.category).distinct())
+            categories = [r for r in result.scalars().all() if r]
+            if not categories:
+                result = await session.execute(select(ORMKeyword.sub_type).distinct())
+                categories = [r for r in result.scalars().all() if r]
+            return categories
 
-    async def create_keyword(self, keyword_data):
-        from .models import Keyword
-        import uuid
-        import datetime
-        from sqlalchemy import select
-        async with self.session_factory() as session:
-            result = await session.execute(select(Keyword).where(Keyword.term == keyword_data.term))
-            if result.scalars().first():
-                raise DuplicateKeywordError(f"Keyword '{keyword_data.term}' already exists")
-            kw_id = getattr(keyword_data, 'id', None) or str(uuid.uuid4())
-            kw = Keyword(
-                id=kw_id,
-                term=keyword_data.term,
-                weight=keyword_data.weight,
-                type=keyword_data.type,
-                sub_type=getattr(keyword_data, 'sub_type', None),
-                sub_category=getattr(keyword_data, 'sub_category', None),
-                category=getattr(keyword_data, 'category', None),
-                created_at=datetime.datetime.now().isoformat()
+    async def create_keyword(self, keyword_in):
+        async with self.get_session() as session:
+            from core.models import Keyword as ORMKeyword
+            from sqlalchemy import select, func
+            import uuid
+            from datetime import datetime, timezone
+            
+            stmt = select(ORMKeyword).where(func.lower(ORMKeyword.term) == keyword_in.term.lower())
+            res = await session.execute(stmt)
+            if res.scalars().first():
+                raise DuplicateKeywordError(f"Keyword '{keyword_in.term}' already exists")
+                
+            db_kw = ORMKeyword(
+                id=str(uuid.uuid4()),
+                term=keyword_in.term,
+                weight=keyword_in.weight,
+                type=keyword_in.type,
+                sub_type=keyword_in.sub_type,
+                sub_category=keyword_in.sub_category,
+                category=keyword_in.category,
+                created_at=datetime.now(timezone.utc).isoformat()
             )
-            session.add(kw)
+            session.add(db_kw)
             await session.commit()
-            return kw
+            return db_kw
 
-    async def update_keyword(self, keyword_id, keyword_data):
-        from .models import Keyword
-        from sqlalchemy import select
-        async with self.session_factory() as session:
-            result = await session.execute(select(Keyword).where(Keyword.id == keyword_id))
-            kw = result.scalars().first()
-            if not kw:
+    async def update_keyword(self, keyword_id: str, keyword_input):
+        async with self.get_session() as session:
+            from core.models import Keyword as ORMKeyword
+            from sqlalchemy import select
+            
+            stmt = select(ORMKeyword).where(ORMKeyword.id == keyword_id)
+            result = await session.execute(stmt)
+            db_kw = result.scalars().first()
+            if not db_kw:
                 return None
-            if hasattr(keyword_data, 'term') and keyword_data.term is not None:
-                kw.term = keyword_data.term
-            if hasattr(keyword_data, 'weight') and keyword_data.weight is not None:
-                kw.weight = keyword_data.weight
-            if hasattr(keyword_data, 'type') and keyword_data.type is not None:
-                kw.type = keyword_data.type
-            if hasattr(keyword_data, 'sub_type') and keyword_data.sub_type is not None:
-                kw.sub_type = keyword_data.sub_type
-            if hasattr(keyword_data, 'sub_category') and keyword_data.sub_category is not None:
-                kw.sub_category = keyword_data.sub_category
-            if hasattr(keyword_data, 'category') and keyword_data.category is not None:
-                kw.category = keyword_data.category
+                
+            db_kw.term = keyword_input.term
+            db_kw.weight = keyword_input.weight
+            db_kw.type = keyword_input.type
+            db_kw.sub_type = keyword_input.sub_type
+            db_kw.sub_category = keyword_input.sub_category
+            db_kw.category = keyword_input.category
+            
             await session.commit()
-            return kw
+            return db_kw
 
-    async def delete_keyword(self, keyword_id):
-        from .models import Keyword
-        from sqlalchemy import delete
-        async with self.session_factory() as session:
-            await session.execute(delete(Keyword).where(Keyword.id == keyword_id))
+    async def delete_keyword(self, keyword_id: str) -> bool:
+        async with self.get_session() as session:
+            from core.models import Keyword as ORMKeyword
+            from sqlalchemy import select, delete
+            
+            stmt = select(ORMKeyword).where(ORMKeyword.id == keyword_id)
+            result = await session.execute(stmt)
+            db_kw = result.scalars().first()
+            if not db_kw:
+                return False
+                
+            await session.execute(delete(ORMKeyword).where(ORMKeyword.id == keyword_id))
             await session.commit()
+            return True
 
-    async def get_tender_acl(self, tender_id):
-        from .models import TenderACL
-        from sqlalchemy import select
-        async with self.session_factory() as session:
-            result = await session.execute(select(TenderACL).where(TenderACL.id == tender_id))
+    async def get_tender_acl(self, tender_id: str):
+        async with self.get_session() as session:
+            from core.models import TenderACL as ORMTender
+            from sqlalchemy import select
+            stmt = select(ORMTender).where(ORMTender.id == tender_id)
+            result = await session.execute(stmt)
             return result.scalars().first()
 
-    async def get_score_distribution(self, search_text=None, website=None, keyword=None, rating_category=None):
-        return {}
+    async def upsert_tender_acl(self, data: dict):
+        async with self.get_session() as session:
+            from core.models import TenderACL as ORMTender
+            from sqlalchemy import select
+            
+            tender_id = data.get("id")
+            stmt = select(ORMTender).where(ORMTender.id == tender_id)
+            result = await session.execute(stmt)
+            db_tender = result.scalars().first()
+            
+            if not db_tender:
+                db_tender = ORMTender(id=tender_id)
+                session.add(db_tender)
+                
+            db_tender.title = data.get("title", db_tender.title)
+            db_tender.description = data.get("description", db_tender.description)
+            db_tender.full_text = data.get("full_text", db_tender.full_text)
+            db_tender.score = data.get("score", db_tender.score)
+            db_tender.status = data.get("status", db_tender.status)
+            db_tender.source_system = data.get("source_system", db_tender.source_system)
+            
+            await session.commit()
 
+    async def get_config(self, config_id: str) -> dict:
+        async with self.get_session() as session:
+            from core.models import ConfigORM
+            from sqlalchemy import select
+            stmt = select(ConfigORM).where(ConfigORM.key == config_id)
+            result = await session.execute(stmt)
+            cfg = result.scalars().first()
+            return cfg.value if cfg else {}
+
+    async def get_score_distribution(self, search_text=None, website=None, keyword=None, rating_category=None):
+        async with self.get_session() as session:
+            from core.models import TenderACL as ORMTender
+            from sqlalchemy import select
+            
+            stmt = select(ORMTender.score)
+            result = await session.execute(stmt)
+            scores = result.scalars().all()
+            
+            distribution = {
+                "0-1": 0,
+                "1-3": 0,
+                "3-5": 0,
+                "5+": 0
+            }
+            for s in scores:
+                if s < 1:
+                    distribution["0-1"] += 1
+                elif s < 3:
+                    distribution["1-3"] += 1
+                elif s < 5:
+                    distribution["3-5"] += 1
+                else:
+                    distribution["5+"] += 1
+            return distribution
 
 
 db = DatabaseManager("qualification")
+
