@@ -1,3 +1,12 @@
+# --- Stage 1: Build Frontend ---
+FROM node:20-slim AS ui-builder
+WORKDIR /app/ui
+COPY ui/package*.json ./
+RUN npm install --legacy-peer-deps
+COPY ui/ ./
+RUN npm run build
+
+# --- Stage 2: Final Image ---
 FROM python:3.11-slim-bullseye
 
 WORKDIR /app
@@ -17,6 +26,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire service
 COPY . .
+
+# Copy built UI from Stage 1
+COPY --from=ui-builder /app/ui/dist ./ui/dist
 
 # Ensure the module is discoverable
 ENV PYTHONPATH="/app"
