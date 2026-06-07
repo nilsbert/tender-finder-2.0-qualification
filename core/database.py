@@ -60,9 +60,15 @@ class DatabaseManager:
                 "update"
             ], check=True, capture_output=True, text=True)
             logger.info(f"{self.schema} database initialized successfully with Liquibase.")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Liquibase failed: {e.stderr}")
-            raise
+        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+            if isinstance(e, FileNotFoundError):
+                logger.warning("Liquibase executable not found. Falling back to native SQLAlchemy schema creation.")
+            else:
+                logger.error(f"Liquibase failed: {e.stderr if hasattr(e, 'stderr') else e}. Falling back to native SQLAlchemy schema creation.")
+            
+            async with self.engine.begin() as conn:
+                await conn.run_sync(QualificationBase.metadata.create_all)
+            logger.info(f"{self.schema} database schema initialized with native SQLAlchemy fallback.")
 
     def get_session(self):
         return self.session_factory()

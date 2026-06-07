@@ -3,7 +3,7 @@ from core.logger import setup_logger
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
@@ -19,6 +19,23 @@ logger = setup_logger("main", "qualification")
 async def lifespan(app: FastAPI):
     # Initialize DB (Schema/Tables)
     await db.init_db()
+    
+    # Seeding Logic: If database has no keywords, seed initial ones
+    try:
+        keywords = await db.get_all_keywords()
+        if not keywords:
+            logger.info("Database empty. Seeding initial keywords...")
+            from rating.initial_data import get_initial_keywords
+            initial_data = get_initial_keywords()
+            for kw in initial_data:
+                try:
+                    await db.create_keyword(kw)
+                except Exception as e:
+                    logger.error(f"Failed to seed keyword {kw.term}: {e}")
+            logger.info(f"Seeded {len(initial_data)} keywords.")
+    except Exception as e:
+        logger.error(f"Failed to check/seed keywords on startup: {e}", exc_info=True)
+        
     yield
 
 
@@ -62,7 +79,9 @@ app.include_router(keywords_router, prefix="/api", tags=["Keywords"])
 ui_dist_path = os.path.join(os.path.dirname(__file__), "ui", "dist")
 
 if os.path.exists(ui_dist_path):
-    app.mount("/assets", StaticFiles(directory=os.path.join(ui_dist_path, "assets")), name="assets")
+    assets_path = os.path.join(ui_dist_path, "assets")
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 
     @app.get("/")
     async def root_redirect():
